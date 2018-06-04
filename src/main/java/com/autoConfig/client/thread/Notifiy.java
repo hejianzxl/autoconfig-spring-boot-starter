@@ -1,13 +1,8 @@
 package com.autoConfig.client.thread;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Set;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +14,7 @@ import com.autoConfig.client.config.ConfigAnnotationBeanPostProcessor;
 import com.autoConfig.client.dto.CodeConfigDTO;
 import com.autoConfig.client.propertyeditor.PropertyEditor;
 import com.autoConfig.client.utils.AopTargetUtils;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.autoConfig.client.utils.IpHelp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import redis.clients.jedis.JedisPubSub;
 
@@ -53,7 +47,7 @@ public class Notifiy extends JedisPubSub {
 		    }
 		    
 		    // 指定IP执行
-		    if(StringUtils.isNotEmpty(codeConfigDTO.getIp()) && !codeConfigDTO.equals(getIp())) {
+		    if(StringUtils.isNotEmpty(codeConfigDTO.getIp()) && !codeConfigDTO.equals(IpHelp.getIp())) {
 		        return;
 		    }
 		    
@@ -116,27 +110,4 @@ public class Notifiy extends JedisPubSub {
 	public void onPSubscribe(String pattern, int subscribedChannels) {
 
 	}
-	
-	 public static String getIp() {
-	        try {
-	            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-	            InetAddress address = null;
-	            while (interfaces.hasMoreElements()) {
-	                NetworkInterface ni = interfaces.nextElement();
-	                Enumeration<InetAddress> addresses = ni.getInetAddresses();
-	                while (addresses.hasMoreElements()) {
-	                    address = addresses.nextElement();
-	                    if (!address.isLoopbackAddress() && address.getHostAddress().indexOf(":") == -1) {
-	                        return address.getHostAddress();
-	                    }
-	                }
-	            }
-	            logger.info("getHostAddress fail");
-	            return null;
-	        } catch (Throwable t) {
-	            logger.error("getHostAddress error, {}", t);
-	            return null;
-	        }
-	    }
-
 }

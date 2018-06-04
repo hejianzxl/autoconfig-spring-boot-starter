@@ -1,5 +1,6 @@
 package com.autoConfig.client.config;
 
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -18,10 +19,16 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import com.autoConfig.client.commons.Constants;
+import com.autoConfig.client.dto.CodeConfigDTO;
 import com.autoConfig.client.name.factory.NameFactory;
 import com.autoConfig.client.name.factory.ThreadNameFactory;
 import com.autoConfig.client.propertyeditor.PropertyEditor;
 import com.autoConfig.client.thread.NotifyThread;
+import com.autoConfig.client.utils.IpHelp;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import redis.clients.jedis.JedisCluster;
 
 /**
@@ -66,7 +73,7 @@ public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor,Appl
 		try {
 			this.initializeField(bean, beanName);
 			this.methodHandler(bean, beanName);
-		} catch (IllegalArgumentException | IllegalAccessException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return bean;
@@ -112,7 +119,7 @@ public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor,Appl
 		}
 	}
 
-	private void initializeField(Object bean, String beanName) throws IllegalArgumentException, IllegalAccessException {
+	private void initializeField(Object bean, String beanName) throws IllegalArgumentException, IllegalAccessException, JsonParseException, JsonMappingException, IOException {
 		Field[] fields = bean.getClass().getDeclaredFields();
 		if (StringUtils.isEmpty(fields)) {
 			return;
@@ -120,12 +127,19 @@ public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor,Appl
 
 		for (Field field : fields) {
 			AutoConfig codeConfig = field.getAnnotation(AutoConfig.class);
+			
 			if (null != codeConfig) {
 				// REDIS初始化数据
 				String groupId = codeConfig.groupId();
 				String key = codeConfig.key();
 				String value = jedisCluster.get(key);
 				if (StringUtils.isEmpty(value)) {
+				    // 序列化对象
+				    CodeConfigDTO codeConfigDTO = new ObjectMapper().readValue(value, CodeConfigDTO.class);
+				    // IP过滤
+		            if(!StringUtils.isEmpty(codeConfigDTO.getIp()) && !codeConfigDTO.equals(IpHelp.getIp())) {
+		                return;
+		            }
 					value = codeConfig.defaultValue();
 				}
 
