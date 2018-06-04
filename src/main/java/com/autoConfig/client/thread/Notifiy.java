@@ -2,8 +2,13 @@ package com.autoConfig.client.thread;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Set;
+
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
@@ -27,7 +32,7 @@ import redis.clients.jedis.JedisPubSub;
  */
 public class Notifiy extends JedisPubSub {
 
-	private Logger logger = LoggerFactory.getLogger(Notifiy.class);
+	private static final Logger logger = LoggerFactory.getLogger(Notifiy.class);
 	private ApplicationContext applicationContext;
 
 	public Notifiy(ApplicationContext applicationContext) {
@@ -45,6 +50,11 @@ public class Notifiy extends JedisPubSub {
 		    if(null == names) {
 		    	logger.error("Notifiy not find groupId {} corresponding",codeConfigDTO.getGroupId());
 		    	return;
+		    }
+		    
+		    // 指定IP执行
+		    if(StringUtils.isNotEmpty(codeConfigDTO.getIp()) && !codeConfigDTO.equals(getIp())) {
+		        return;
 		    }
 		    
 		    for(String name : names) {
@@ -106,5 +116,27 @@ public class Notifiy extends JedisPubSub {
 	public void onPSubscribe(String pattern, int subscribedChannels) {
 
 	}
+	
+	 public static String getIp() {
+	        try {
+	            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+	            InetAddress address = null;
+	            while (interfaces.hasMoreElements()) {
+	                NetworkInterface ni = interfaces.nextElement();
+	                Enumeration<InetAddress> addresses = ni.getInetAddresses();
+	                while (addresses.hasMoreElements()) {
+	                    address = addresses.nextElement();
+	                    if (!address.isLoopbackAddress() && address.getHostAddress().indexOf(":") == -1) {
+	                        return address.getHostAddress();
+	                    }
+	                }
+	            }
+	            logger.info("getHostAddress fail");
+	            return null;
+	        } catch (Throwable t) {
+	            logger.error("getHostAddress error, {}", t);
+	            return null;
+	        }
+	    }
 
 }

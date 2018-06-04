@@ -19,8 +19,16 @@ private static final long serialVersionUID = 1713397459678191437L;
 	private String value;
 	// 执行IP
 	private String ip;
+	
+    public String getIp() {
+        return ip;
+    }
 
-	public String getGroupId() {
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+    public String getGroupId() {
 		return groupId;
 	}
 
@@ -52,9 +60,8 @@ private static final long serialVersionUID = 1713397459678191437L;
 		this.value = value;
 	}
 
-	@Override
-	public String toString() {
-		return "CodeConfigDTO [groupId=" + groupId + ", key=" + key + ", defauleValue=" + defauleValue + ", value="
-				+ value + "]";
-	}
+    @Override
+    public String toString() {
+        return "CodeConfigDTO [groupId=" + groupId + ", key=" + key + ", defauleValue=" + defauleValue + ", value=" + value + ", ip=" + ip + "]";
+    }
 }
