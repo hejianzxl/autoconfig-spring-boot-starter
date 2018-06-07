@@ -69,8 +69,8 @@ public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor,Appl
 	 */
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, String beanName) {
-		// 处理 annntation注解
 		try {
+		    // 初始化field
 			this.initializeField(bean, beanName);
 			this.methodHandler(bean, beanName);
 		} catch (Exception e) {

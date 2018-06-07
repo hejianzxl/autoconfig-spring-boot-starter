@@ -19,6 +19,8 @@ private static final long serialVersionUID = 1713397459678191437L;
 	private String value;
 	// 执行IP
 	private String ip;
+	// 是否延迟执行
+	private boolean delay;
 	
     public String getIp() {
         return ip;
@@ -60,8 +62,18 @@ private static final long serialVersionUID = 1713397459678191437L;
 		this.value = value;
 	}
 
+    
+    public boolean isDelay() {
+        return delay;
+    }
+
+    
+    public void setDelay(boolean delay) {
+        this.delay = delay;
+    }
+
     @Override
     public String toString() {
-        return "CodeConfigDTO [groupId=" + groupId + ", key=" + key + ", defauleValue=" + defauleValue + ", value=" + value + ", ip=" + ip + "]";
+        return "CodeConfigDTO [groupId=" + groupId + ", key=" + key + ", defauleValue=" + defauleValue + ", value=" + value + ", ip=" + ip + ", delay=" + delay + "]";
     }
 }
