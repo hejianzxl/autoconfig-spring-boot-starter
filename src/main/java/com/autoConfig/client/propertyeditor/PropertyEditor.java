@@ -11,15 +11,19 @@ public class PropertyEditor {
      */
     public static Object primitiveTypeConvert(Class<?> clazz, String value) {
         if (clazz == long.class) {
+        	if("null".equalsIgnoreCase(value)) value="0";
             return Long.parseLong(value);
         }
         if (clazz == int.class) {
+        	if("null".equalsIgnoreCase(value)) value="0";
             return Integer.parseInt(value);
         }
         if (clazz == double.class) {
+        	if("null".equalsIgnoreCase(value)) value="0";
             return Double.parseDouble(value);
         }
         if (clazz == float.class) {
+        	if("null".equalsIgnoreCase(value)) value="0";
             return Float.parseFloat(value);
         }
         if (clazz == byte.class) {

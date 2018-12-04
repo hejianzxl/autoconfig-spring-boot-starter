@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * 配置信息DTO
  * @author hejian
- *
+ * {"groupId":"testConfig","key":"param1","value":"哈哈"}
  */
 public class CodeConfigDTO implements Serializable {
 private static final long serialVersionUID = 1713397459678191437L;

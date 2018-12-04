@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import com.autoConfig.client.config.ConfigAnnotationBeanPostProcessor;
 import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPoolConfig;
 
@@ -20,7 +21,7 @@ public class SpringAutoConfigure {
     @Autowired
    private com.autoConfig.client.spring.configuration.RedisProperties redisProperties;
     
-    @Bean
+    /*@Bean
     public JedisCluster create() {
         Set<HostAndPort> jedisClusterNodes = new HashSet<HostAndPort>();
         JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
@@ -31,14 +32,18 @@ public class SpringAutoConfigure {
         jedisClusterNodes.add(new HostAndPort(redisProperties.getHost(), redisProperties.getPort()));
         JedisCluster jedisCluster = new JedisCluster(jedisClusterNodes, jedisPoolConfig);
         return jedisCluster;
+    }*/
+    
+    @Bean
+    public Jedis createJedis() {
+        Jedis jedis = new Jedis(redisProperties.getHost(), redisProperties.getPort());
+        return jedis;
     }
-    
-    
     
     @Bean//创建实体bean
     public BeanPostProcessor configAnnotationBeanPostProcessor() {
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        ConfigAnnotationBeanPostProcessor configAnnotationBeanPostProcessor = new ConfigAnnotationBeanPostProcessor(create(),"test");
+        ConfigAnnotationBeanPostProcessor configAnnotationBeanPostProcessor = new ConfigAnnotationBeanPostProcessor(createJedis(),"test");
         System.out.println(">>>>>>>>>>>>>>>>>>>>> init over");
         return configAnnotationBeanPostProcessor;
     }

@@ -24,11 +24,12 @@ import com.autoConfig.client.name.factory.NameFactory;
 import com.autoConfig.client.name.factory.ThreadNameFactory;
 import com.autoConfig.client.propertyeditor.PropertyEditor;
 import com.autoConfig.client.thread.NotifyThread;
-import com.autoConfig.client.utils.IpHelp;
+import com.autoConfig.client.utils.IPHelp;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 
 /**
@@ -38,30 +39,40 @@ import redis.clients.jedis.JedisCluster;
  * @author hejian
  *
  */
-public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor,ApplicationContextAware{
-	
-	private JedisCluster										jedisCluster;
+public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor, ApplicationContextAware {
 
-	private String												appName;
+	private JedisCluster jedisCluster;
+	private Jedis jedis;
 
-	public static volatile ConcurrentMap<String, Set<String>>	GLOBALCACHE		= new ConcurrentHashMap<>();
+	private String appName;
 
-	public static volatile ConcurrentMap<String, String>		CACHE_LISTENTER	= new ConcurrentHashMap<>();
+	public static volatile ConcurrentMap<String, Set<String>> GLOBALCACHE = new ConcurrentHashMap<>();
 
-	public static volatile ConcurrentMap<String, Method>		METHOD_MAP		= new ConcurrentHashMap<>();
+	public static volatile ConcurrentMap<String, String> CACHE_LISTENTER = new ConcurrentHashMap<>();
 
-	public static volatile ConcurrentMap<String, Object>	    METHOD_CACH     = new ConcurrentHashMap<>();
+	public static volatile ConcurrentMap<String, Method> METHOD_MAP = new ConcurrentHashMap<>();
 
-	static final ExecutorService executor =  Executors.newSingleThreadExecutor(ThreadNameFactory.createNameThreadFactory(Constants.DYNAMIC_CONFIG));
-	
+	public static volatile ConcurrentMap<String, Object> METHOD_CACH = new ConcurrentHashMap<>();
+
+	static final ExecutorService executor = Executors
+			.newSingleThreadExecutor(ThreadNameFactory.createNameThreadFactory(Constants.DYNAMIC_CONFIG));
+
 	private ApplicationContext applicationContext;
-	
+
 	public ConfigAnnotationBeanPostProcessor(JedisCluster jedisCluster) {
 		this(jedisCluster, NameFactory.init().create());
 	}
 
+	public ConfigAnnotationBeanPostProcessor(Jedis jedis) {
+		this(jedis, NameFactory.init().create());
+	}
+
 	public ConfigAnnotationBeanPostProcessor(JedisCluster jedisCluster, String appName) {
 		this.jedisCluster = jedisCluster;
+	}
+
+	public ConfigAnnotationBeanPostProcessor(Jedis jedis, String appName) {
+		this.jedis = jedis;
 	}
 
 	/**
@@ -70,7 +81,7 @@ public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor,Appl
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, String beanName) {
 		try {
-		    // 初始化field
+			// 初始化field
 			this.initializeField(bean, beanName);
 			this.methodHandler(bean, beanName);
 		} catch (Exception e) {
@@ -88,17 +99,17 @@ public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor,Appl
 		if (StringUtils.isEmpty(methods)) {
 			return;
 		}
-		//Reflections reflections = new Reflections();
+		// Reflections reflections = new Reflections();
 		for (Method method : methods) {
 			Annotation[][] annotations = method.getParameterAnnotations();
-			for(Annotation[] aArray: annotations) {
-				for(Annotation a: aArray) {
-					if(a instanceof AutoConfig){
-						AutoConfig codeConfig = (AutoConfig)a;
+			for (Annotation[] aArray : annotations) {
+				for (Annotation a : aArray) {
+					if (a instanceof AutoConfig) {
+						AutoConfig codeConfig = (AutoConfig) a;
 						if (null != codeConfig) {
 							ReflectionUtils.makeAccessible(method);
 							try {
-								method.invoke(bean, jedisCluster.get(codeConfig.key()));
+								method.invoke(bean, jedis.get(codeConfig.key()));
 							} catch (IllegalAccessException e) {
 								e.printStackTrace();
 							} catch (IllegalArgumentException e) {
@@ -113,13 +124,14 @@ public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor,Appl
 				}
 			}
 		}
-		
-		if(!METHOD_MAP.isEmpty()){
+
+		if (!METHOD_MAP.isEmpty()) {
 			METHOD_CACH.put(beanName, METHOD_MAP);
 		}
 	}
 
-	private void initializeField(Object bean, String beanName) throws IllegalArgumentException, IllegalAccessException, JsonParseException, JsonMappingException, IOException {
+	private void initializeField(Object bean, String beanName) throws IllegalArgumentException, IllegalAccessException,
+			JsonParseException, JsonMappingException, IOException {
 		Field[] fields = bean.getClass().getDeclaredFields();
 		if (StringUtils.isEmpty(fields)) {
 			return;
@@ -127,24 +139,27 @@ public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor,Appl
 
 		for (Field field : fields) {
 			AutoConfig codeConfig = field.getAnnotation(AutoConfig.class);
-			
+
 			if (null != codeConfig) {
 				// REDIS初始化数据
 				String groupId = codeConfig.groupId();
 				String key = codeConfig.key();
-				String value = jedisCluster.get(key);
-				if (StringUtils.isEmpty(value)) {
-				    // 序列化对象
-				    CodeConfigDTO codeConfigDTO = new ObjectMapper().readValue(value, CodeConfigDTO.class);
-				    // IP过滤
-		            if(!StringUtils.isEmpty(codeConfigDTO.getIp()) && !codeConfigDTO.equals(IpHelp.getIp())) {
-		                return;
-		            }
+				String value = jedis.get(key);
+				if (!StringUtils.isEmpty(value) && !"null".equals(value)) {
+					// 序列化对象
+					CodeConfigDTO codeConfigDTO = new ObjectMapper().readValue(value, CodeConfigDTO.class);
+					// IP过滤
+					if (!StringUtils.isEmpty(codeConfigDTO.getIp()) && !codeConfigDTO.equals(IPHelp.getIp())) {
+						return;
+					}
 					value = codeConfig.defaultValue();
 				}
 
 				ReflectionUtils.makeAccessible(field);
-				field.set(bean, PropertyEditor.primitiveTypeConvert(field.getType(), value));
+				try {
+					field.set(bean, PropertyEditor.primitiveTypeConvert(field.getType(), value));
+				} catch (Exception e) {
+				}
 				Set<String> beanNameSet = GLOBALCACHE.getOrDefault(key, Collections.emptySet());
 				if (beanNameSet.isEmpty()) {
 					beanNameSet = new HashSet<>();
@@ -154,7 +169,8 @@ public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor,Appl
 				GLOBALCACHE.put(key, beanNameSet);
 				// 注册监听
 				if (!CACHE_LISTENTER.containsKey(groupId)) {
-					executor.execute(new NotifyThread(groupId, jedisCluster, applicationContext));
+					executor.execute(new NotifyThread(groupId, jedis, applicationContext));
+					CACHE_LISTENTER.put(groupId, "1");
 				}
 			}
 		}
@@ -166,8 +182,8 @@ public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor,Appl
 		return bean;
 	}
 
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-       this.applicationContext = applicationContext;
-    }
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
+	}
 }

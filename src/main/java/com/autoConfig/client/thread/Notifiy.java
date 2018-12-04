@@ -6,22 +6,18 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.commons.lang3.StringUtils;
-import org.omg.CORBA.PRIVATE_MEMBER;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.ReflectionUtils;
-
-import com.alibaba.rocketmq.common.ThreadFactoryImpl;
 import com.autoConfig.client.config.AutoConfig;
 import com.autoConfig.client.config.ConfigAnnotationBeanPostProcessor;
 import com.autoConfig.client.dto.CodeConfigDTO;
 import com.autoConfig.client.propertyeditor.PropertyEditor;
 import com.autoConfig.client.utils.AopTargetUtils;
-import com.autoConfig.client.utils.IpHelp;
+import com.autoConfig.client.utils.IPHelp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import redis.clients.jedis.JedisPubSub;
 
@@ -56,7 +52,7 @@ public class Notifiy extends JedisPubSub {
             }
 
             // IP过滤
-            if (StringUtils.isNotEmpty(codeConfigDTO.getIp()) && !codeConfigDTO.equals(IpHelp.getIp())) {
+            if (StringUtils.isNotEmpty(codeConfigDTO.getIp()) && !codeConfigDTO.equals(IPHelp.getIp())) {
                 return;
             }
             // 延迟

@@ -7,9 +7,9 @@ import java.util.Enumeration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class IpHelp {
+public class IPHelp {
 
-    private static final Logger logger = LoggerFactory.getLogger(IpHelp.class);
+    private static final Logger logger = LoggerFactory.getLogger(IPHelp.class);
 
     public static String getIp() {
         try {

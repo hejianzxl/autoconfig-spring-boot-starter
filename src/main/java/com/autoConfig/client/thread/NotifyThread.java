@@ -1,6 +1,8 @@
 package com.autoConfig.client.thread;
 
 import org.springframework.context.ApplicationContext;
+
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 
 /**
@@ -13,19 +15,17 @@ public class NotifyThread extends BaseThread {
 	
 	private String groupId;
 	
-	private JedisCluster jedisCluster;
-	
 	private ApplicationContext applicationContext;
 
-	public NotifyThread(String groupId, JedisCluster jedisCluster, ApplicationContext applicationContext) {
+	public NotifyThread(String groupId, Jedis jedis, ApplicationContext applicationContext) {
 		this.groupId = groupId;
-		this.jedisCluster = jedisCluster;
 		this.applicationContext = applicationContext;
 	}
 
 	@Override
 	public void execute() {
 		// 订阅指定的 SUBSCRIBE channel   TODO
-		jedisCluster.subscribe(new Notifiy(applicationContext), groupId);
+		Jedis jedis = new Jedis("127.0.0.1", 6379);
+		jedis.subscribe(new Notifiy(applicationContext), groupId);
 	}
 }
