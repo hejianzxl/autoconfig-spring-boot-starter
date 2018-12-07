@@ -5,10 +5,16 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import com.autoConfig.client.spring.configuration.RedisProperties;
+import com.autoConfig.client.utils.SpringContextHolder;
+
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import com.autoConfig.client.config.ConfigAnnotationBeanPostProcessor;
+import com.autoConfig.client.netty.NettyClient;
+import com.autoConfig.client.netty.proxy.ConfigClient;
+import com.autoConfig.client.netty.proxy.ConfigClientFactoryBean;
+
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPoolConfig;
@@ -37,9 +43,22 @@ public class SpringAutoConfigure {
     
     @Bean//创建实体bean
     public BeanPostProcessor configAnnotationBeanPostProcessor() {
-        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         ConfigAnnotationBeanPostProcessor configAnnotationBeanPostProcessor = new ConfigAnnotationBeanPostProcessor(create(),"test");
-        System.out.println(">>>>>>>>>>>>>>>>>>>>> init over");
         return configAnnotationBeanPostProcessor;
+    }
+    
+    @Bean
+    public NettyClient initNettyClient() {
+    	return new NettyClient(redisProperties.getDisConfigHost(), redisProperties.getDisConfigPort());
+    }
+    
+    @Bean
+    public SpringContextHolder springContextHolder() {
+    	return new SpringContextHolder();
+    }
+    
+    @Bean(name="configClient")
+    public ConfigClientFactoryBean configClient() throws Exception {
+    	return new ConfigClientFactoryBean();
     }
 }

@@ -12,9 +12,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class RedisProperties {
 	// redis host name
 	private String host;
-	
 	// redis connection port
 	private int port;
+	private String disConfigHost;
+	private int disConfigPort;
 
 	@PostConstruct
 	public void init() {
@@ -35,6 +36,22 @@ public class RedisProperties {
 
 	public void setPort(int port) {
 		this.port = port;
+	}
+
+	public String getDisConfigHost() {
+		return disConfigHost;
+	}
+
+	public void setDisConfigHost(String disConfigHost) {
+		this.disConfigHost = disConfigHost;
+	}
+
+	public int getDisConfigPort() {
+		return disConfigPort;
+	}
+
+	public void setDisConfigPort(int disConfigPort) {
+		this.disConfigPort = disConfigPort;
 	}
 
 }

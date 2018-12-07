@@ -71,8 +71,9 @@ public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor,Appl
 	public Object postProcessBeforeInitialization(Object bean, String beanName) {
 		try {
 		    // 初始化field
-			this.initializeField(bean, beanName);
-			this.methodHandler(bean, beanName);
+			//this.initializeField(bean, beanName);
+			initializeFieldFromNetty(bean, beanName);
+			//this.methodHandler(bean, beanName);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -116,6 +117,44 @@ public class ConfigAnnotationBeanPostProcessor implements BeanPostProcessor,Appl
 		
 		if(!METHOD_MAP.isEmpty()){
 			METHOD_CACH.put(beanName, METHOD_MAP);
+		}
+	}
+	
+	private void initializeFieldFromNetty(Object bean, String beanName) throws IllegalArgumentException, IllegalAccessException, JsonParseException, JsonMappingException, IOException {
+		Field[] fields = bean.getClass().getDeclaredFields();
+		if (StringUtils.isEmpty(fields)) {
+			return;
+		}
+
+		for (Field field : fields) {
+			AutoConfig codeConfig = field.getAnnotation(AutoConfig.class);
+			
+			if (null != codeConfig) {
+				// REDIS初始化数据
+				String groupId = codeConfig.groupId();
+				String key = codeConfig.key();
+				String value = org.apache.commons.lang3.StringUtils.EMPTY;
+				if (!StringUtils.isEmpty(value)) {
+				    // 序列化对象
+				    CodeConfigDTO codeConfigDTO = new ObjectMapper().readValue(value, CodeConfigDTO.class);
+				    // IP过滤
+		            if(!StringUtils.isEmpty(codeConfigDTO.getIp()) && !codeConfigDTO.equals(IpHelp.getIp())) {
+		                return;
+		            }
+				}else {
+					value = codeConfig.defaultValue();
+				}
+
+				ReflectionUtils.makeAccessible(field);
+				field.set(bean, PropertyEditor.primitiveTypeConvert(field.getType(), value));
+				Set<String> beanNameSet = GLOBALCACHE.getOrDefault(key, Collections.emptySet());
+				if (beanNameSet.isEmpty()) {
+					beanNameSet = new HashSet<>();
+				}
+
+				beanNameSet.add(beanName);
+				GLOBALCACHE.put(key, beanNameSet);
+			}
 		}
 	}
 
